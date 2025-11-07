@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visible Guest - Restaurant Feedback</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .star-rating {
+            display: flex;
+            gap: 0.5rem;
+            font-size: 2rem;
+        }
+        
+        .star {
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #d1d5db;
+        }
+        
+        .star.filled {
+            color: #fbbf24;
+        }
+        
+        .star:hover {
+            transform: scale(1.1);
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        }
+        
+        .logo-eye {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1e3a8a 0%, #60a5fa 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            max-width: 400px;
+            width: 90%;
+            animation: slideUp 0.3s;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Mock data for different restaurants and servers
+        // NOTE: In production, serverName will be dynamically set based on the unique QR code
+        // that each server presents to the guest. The QR code URL parameter will determine
+        // which server's data to load (e.g., ?server=server-1 loads Jane Smith's profile)
+        const mockData = {
+            'server-1': {
+                serverName: 'Jane Smith',
+                restaurantName: 'Club Beenleigh',
+                // Direct link to write a review for Club Beenleigh
+                googleReviewUrl: 'https://search.google.com/local/writereview?placeid=ChIJVTQ3JXlqkWsRLIjxO7c67HM'
+            },
+            'server-2': {
+                serverName: 'Tom Jones',
+                restaurantName: 'Club Beenleigh',
+                googleReviewUrl: 'https://search.google.com/local/writereview?placeid=ChIJVTQ3JXlqkWsRLIjxO7c67HM'
+            },
+            'default': {
+                serverName: 'Jessica', // Default server for demo/testing
+                restaurantName: 'Club Beenleigh',
+                googleReviewUrl: 'https://search.google.com/local/writereview?placeid=ChIJVTQ3JXlqkWsRLIjxO7c67HM'
+            }
+        };
+
+        function StarRating({ rating, onRatingChange, label, stacked = false }) {
+            const [hoverRating, setHoverRating] = useState(0);
+
+            if (stacked) {
+                // Original stacked layout for "recommend" question
+                return (
+                    <div className="mb-4 flex flex-col items-center">
+                        <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
+                            {label}
+                        </label>
+                        <div className="star-rating">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <span
+                                    key={star}
+                                    className={`star ${star <= (hoverRating || rating) ? 'filled' : ''}`}
+                                    onClick={() => onRatingChange(star)}
+                                    onMouseEnter={() => setHoverRating(star)}
+                                    onMouseLeave={() => setHoverRating(0)}
+                                >
+                                    ★
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                );
+            }
+
+            // Side-by-side layout for other categories
+            return (
+                <div className="mb-4 flex items-center justify-center gap-4">
+                    <label className="text-sm font-medium text-gray-700 min-w-[100px]">
+                        {label}
+                    </label>
+                    <div className="star-rating">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                            <span
+                                key={star}
+                                className={`star ${star <= (hoverRating || rating) ? 'filled' : ''}`}
+                                onClick={() => onRatingChange(star)}
+                                onMouseEnter={() => setHoverRating(star)}
+                                onMouseLeave={() => setHoverRating(0)}
+                            >
+                                ★
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        function Modal({ isOpen, onClose, children }) {
+            if (!isOpen) return null;
+
+            return (
+                <div className="modal-overlay" onClick={onClose}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        {children}
+                    </div>
+                </div>
+            );
+        }
+
+        function App() {
+            const [currentView, setCurrentView] = useState('landing'); // landing, form, thankYou, googlePrompt
+            const [serverInfo, setServerInfo] = useState(mockData.default);
+            const [ratings, setRatings] = useState({
+                food: 0,
+                drinks: 0,
+                service: 0,
+                environment: 0,
+                recommend: 0
+            });
+            const [feedback, setFeedback] = useState('');
+            const [showModal, setShowModal] = useState(false);
+            const [averageRating, setAverageRating] = useState(0);
+
+            // Simulate QR code scan - In production, this would parse URL parameters
+            useEffect(() => {
+                const urlParams = new URLSearchParams(window.location.search);
+                const serverId = urlParams.get('server') || 'default';
+                setServerInfo(mockData[serverId] || mockData.default);
+            }, []);
+
+            const handleRatingChange = (category, value) => {
+                setRatings(prev => ({
+                    ...prev,
+                    [category]: value
+                }));
+            };
+
+            const calculateAverage = () => {
+                const values = Object.values(ratings);
+                const sum = values.reduce((acc, val) => acc + val, 0);
+                return sum / values.length;
+            };
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                
+                // Check if all ratings are filled
+                const allRated = Object.values(ratings).every(rating => rating > 0);
+                
+                if (!allRated) {
+                    alert('Please rate all categories before submitting.');
+                    return;
+                }
+
+                const avg = calculateAverage();
+                setAverageRating(avg);
+
+                // Show appropriate response based on rating
+                if (avg >= 4) {
+                    setCurrentView('googlePrompt');
+                } else {
+                    setCurrentView('thankYou');
+                }
+            };
+
+            const handleGoogleReview = (accepted) => {
+                if (accepted) {
+                    // Copy feedback to clipboard
+                    if (feedback) {
+                        navigator.clipboard.writeText(feedback);
+                    }
+                    // Redirect to Google Review page
+                    window.open(serverInfo.googleReviewUrl, '_blank');
+                }
+                setCurrentView('thankYou');
+            };
+
+            const resetForm = () => {
+                setCurrentView('landing');
+                setRatings({
+                    food: 0,
+                    drinks: 0,
+                    service: 0,
+                    environment: 0,
+                    recommend: 0
+                });
+                setFeedback('');
+                setAverageRating(0);
+            };
+
+            // Landing page to simulate QR scan
+            if (currentView === 'landing') {
+                return (
+                    <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+                            <div className="logo-eye">
+                                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                                </svg>
+                            </div>
+                            <h1 className="text-3xl font-bold text-gray-800 mb-2">Invisible Guest</h1>
+                            <p className="text-gray-600 mb-6">Your feedback matters</p>
+                            
+                            <div className="bg-purple-50 rounded-lg p-6 mb-6">
+                                <p className="text-sm text-gray-600 mb-2">Server</p>
+                                <p className="text-xl font-semibold text-gray-800">{serverInfo.serverName}</p>
+                                <p className="text-sm text-gray-500 mt-1">{serverInfo.restaurantName}</p>
+                            </div>
+
+                            <button
+                                onClick={() => setCurrentView('form')}
+                                className="w-full bg-gradient-to-r from-blue-900 to-blue-500 text-white font-semibold py-4 px-6 rounded-lg hover:from-blue-950 hover:to-blue-600 transition duration-200 shadow-lg"
+                            >
+                                Start Feedback
+                            </button>
+
+                            <p className="text-xs text-gray-500 mt-4">
+                                This demo simulates scanning a QR code. In production, scanning the QR code would directly open the feedback form.
+                            </p>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Feedback form
+            if (currentView === 'form') {
+                return (
+                    <div className="min-h-screen bg-gray-50 py-8 px-4">
+                        <div className="max-w-2xl mx-auto">
+                            <div className="bg-white rounded-2xl shadow-xl p-8">
+                                <div className="text-center mb-8">
+                                    <div className="logo-eye mx-auto">
+                                        <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                                        </svg>
+                                    </div>
+                                    <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                                        Thanks for joining us at {serverInfo.restaurantName} today
+                                    </h2>
+                                    <p className="text-gray-600">We'd love to know about your experience</p>
+                                    <p className="text-sm text-blue-700 mt-2">Served by: {serverInfo.serverName}</p>
+                                </div>
+
+                                <form onSubmit={handleSubmit} className="space-y-6">
+                                    <div className="bg-blue-50 rounded-lg p-6">
+                                        <h3 className="text-lg font-semibold text-gray-800 mb-4">How would you rate:</h3>
+                                        
+                                        <StarRating
+                                            label="Food"
+                                            rating={ratings.food}
+                                            onRatingChange={(value) => handleRatingChange('food', value)}
+                                        />
+                                        
+                                        <StarRating
+                                            label="Drinks"
+                                            rating={ratings.drinks}
+                                            onRatingChange={(value) => handleRatingChange('drinks', value)}
+                                        />
+                                        
+                                        <StarRating
+                                            label="Service"
+                                            rating={ratings.service}
+                                            onRatingChange={(value) => handleRatingChange('service', value)}
+                                        />
+                                        
+                                        <StarRating
+                                            label="Environment"
+                                            rating={ratings.environment}
+                                            onRatingChange={(value) => handleRatingChange('environment', value)}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <StarRating
+                                            label="How likely would you be to recommend us to a friend?"
+                                            rating={ratings.recommend}
+                                            onRatingChange={(value) => handleRatingChange('recommend', value)}
+                                            stacked={true}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Is there anything else you'd like to tell us about your experience today?
+                                        </label>
+                                        <textarea
+                                            value={feedback}
+                                            onChange={(e) => setFeedback(e.target.value)}
+                                            rows="4"
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none"
+                                            placeholder="Share your thoughts..."
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        className="w-full bg-gradient-to-r from-blue-900 to-blue-500 text-white font-semibold py-4 px-6 rounded-lg hover:from-blue-950 hover:to-blue-600 transition duration-200 shadow-lg"
+                                    >
+                                        Submit Feedback
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Google review prompt (for 4+ stars)
+            if (currentView === 'googlePrompt') {
+                return (
+                    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+                            <div className="mb-6">
+                                <div className="text-6xl mb-4">🌟</div>
+                                <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                                    Thank you for your feedback!
+                                </h2>
+                                <p className="text-gray-600 mb-4">
+                                    We're thrilled you had a great experience with us.
+                                </p>
+                                <p className="text-gray-700 font-medium">
+                                    Would you like to post this feedback on Google Reviews? We'll copy your comments for you, just paste into the Google review page.
+                                </p>
+                            </div>
+
+                            <div className="space-y-3">
+                                <button
+                                    onClick={() => handleGoogleReview(true)}
+                                    className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-green-600 hover:to-green-700 transition duration-200"
+                                >
+                                    Yes, Post on Google
+                                </button>
+                                <button
+                                    onClick={() => handleGoogleReview(false)}
+                                    className="w-full bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition duration-200"
+                                >
+                                    No, Thanks
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Thank you page
+            if (currentView === 'thankYou') {
+                return (
+                    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+                            <div className="mb-6">
+                                <div className="text-6xl mb-4">🙏</div>
+                                <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                                    Thank you for your feedback!
+                                </h2>
+                                <p className="text-gray-600">
+                                    We hope to see you again soon at {serverInfo.restaurantName}.
+                                </p>
+                            </div>
+
+                            <button
+                                onClick={resetForm}
+                                className="w-full bg-gradient-to-r from-blue-900 to-blue-500 text-white font-semibold py-3 px-6 rounded-lg hover:from-blue-950 hover:to-blue-600 transition duration-200"
+                            >
+                                Submit Another Review
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return null;
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
