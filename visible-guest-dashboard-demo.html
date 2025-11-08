@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invisible Guest - Venue Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1a1a4a 0%, #0f0f2e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .venue-name {
+            font-size: 1.1rem;
+            color: #60a5fa;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .filters {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-size: 0.9rem;
+            color: #93c5fd;
+            font-weight: 500;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 0.75rem;
+            background: rgba(30, 58, 138, 0.3);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+        }
+
+        .filter-group select option {
+            background: #1a1a4a;
+            color: white;
+        }
+
+        .apply-filters {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .apply-filters:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(96, 165, 250, 0.2);
+            border-color: rgba(96, 165, 250, 0.3);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #93c5fd;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-change {
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .stat-change.positive {
+            color: #4ade80;
+        }
+
+        .stat-change.negative {
+            color: #f87171;
+        }
+
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chart-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #93c5fd;
+        }
+
+        .table-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: rgba(30, 58, 138, 0.3);
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #93c5fd;
+            border-bottom: 2px solid rgba(96, 165, 250, 0.3);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        tbody tr:hover {
+            background: rgba(96, 165, 250, 0.1);
+        }
+
+        .rating-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.3rem 0.8rem;
+            background: rgba(96, 165, 250, 0.2);
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .rating-badge.excellent {
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+        }
+
+        .rating-badge.good {
+            background: rgba(96, 165, 250, 0.2);
+            color: #60a5fa;
+        }
+
+        .rating-badge.average {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        .rating-badge.poor {
+            background: rgba(248, 113, 113, 0.2);
+            color: #f87171;
+        }
+
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            transition: color 0.2s ease;
+        }
+
+        .sortable:hover {
+            color: #60a5fa;
+        }
+
+        .sortable::after {
+            content: ' ↕';
+            opacity: 0.3;
+            font-size: 0.8em;
+        }
+
+        .sortable.asc::after {
+            content: ' ↑';
+            opacity: 1;
+        }
+
+        .sortable.desc::after {
+            content: ' ↓';
+            opacity: 1;
+        }
+
+        .star {
+            color: #fbbf24;
+        }
+
+        @media (max-width: 1024px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .stats-overview {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <img src="./NEW_IG_Artboard_30.png" alt="Invisible Guest" style="height: 50px;">
+            <div style="margin-left: 1rem;">
+                <div class="venue-name">Club Beenleigh</div>
+            </div>
+        </div>
+        <div class="venue-name">Dashboard</div>
+    </header>
+
+    <div class="container">
+        <!-- Filters Section -->
+        <div class="filters">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label for="server-select">Server</label>
+                    <select id="server-select">
+                        <option value="">All Servers</option>
+                        <option value="jane">Jane Smith</option>
+                        <option value="tom">Tom Jones</option>
+                        <option value="walter">Walter Lu</option>
+                        <option value="fran">Fran Potts</option>
+                        <option value="ali">Ali May</option>
+                        <option value="steve">Steve John</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="date-from">Date From</label>
+                    <input type="date" id="date-from" value="2025-08-01">
+                </div>
+
+                <div class="filter-group">
+                    <label for="date-to">Date To</label>
+                    <input type="date" id="date-to" value="2025-11-08">
+                </div>
+
+                <div class="filter-group">
+                    <label for="shift-select">Shift</label>
+                    <select id="shift-select">
+                        <option value="">All Shifts</option>
+                        <option value="breakfast">Breakfast</option>
+                        <option value="lunch">Lunch</option>
+                        <option value="dinner">Dinner</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="measure-select">Measure</label>
+                    <select id="measure-select">
+                        <option value="">All Measures</option>
+                        <option value="food">Food</option>
+                        <option value="drinks">Drinks</option>
+                        <option value="service">Service</option>
+                        <option value="environment">Environment</option>
+                        <option value="recommend">Recommend</option>
+                    </select>
+                </div>
+
+                <div class="filter-group" style="justify-content: flex-end;">
+                    <label>&nbsp;</label>
+                    <button class="apply-filters">Apply Filters</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="stats-overview">
+            <div class="stat-card">
+                <div class="stat-label">Team Average Rating</div>
+                <div class="stat-value">4.20</div>
+                <div class="stat-change positive">
+                    ▲ 0.15 vs previous period
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Total Responses</div>
+                <div class="stat-value">248</div>
+                <div class="stat-change positive">
+                    ▲ 23% vs previous period
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Google Reviews Generated</div>
+                <div class="stat-value">142</div>
+                <div class="stat-change positive">
+                    ▲ 18% conversion rate
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Avg Engagement Score</div>
+                <div class="stat-value">5.5</div>
+                <div class="stat-change positive">
+                    ▲ 1.2 vs previous period
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <div class="chart-card">
+                <h3 class="chart-title">Average Ratings by Category</h3>
+                <canvas id="categoryChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <h3 class="chart-title">Top Performers</h3>
+                <canvas id="performersChart"></canvas>
+            </div>
+
+            <div class="chart-card full-width">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3 class="chart-title" style="margin: 0;">Rating Trends (Last 30 Days)</h3>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="trend-food" checked style="cursor: pointer;">
+                            <span style="color: #60a5fa;">Food</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="trend-drinks" style="cursor: pointer;">
+                            <span style="color: #fbbf24;">Drinks</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="trend-service" checked style="cursor: pointer;">
+                            <span style="color: #4ade80;">Service</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="trend-environment" style="cursor: pointer;">
+                            <span style="color: #f87171;">Environment</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="trend-recommend" style="cursor: pointer;">
+                            <span style="color: #a78bfa;">Recommend</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="trend-overall" checked style="cursor: pointer;">
+                            <span style="color: #93c5fd;">Overall</span>
+                        </label>
+                    </div>
+                </div>
+                <canvas id="trendsChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <h3 class="chart-title">Ratings Distribution</h3>
+                <canvas id="distributionChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <h3 class="chart-title">Response Rate by Shift</h3>
+                <canvas id="shiftChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Server Performance Table -->
+        <div class="table-container">
+            <h3 class="chart-title">Server Performance Details</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="sortable" data-sort="name">Name</th>
+                        <th class="sortable" data-sort="food">Food</th>
+                        <th class="sortable" data-sort="drinks">Drinks</th>
+                        <th class="sortable" data-sort="service">Service</th>
+                        <th class="sortable" data-sort="environment">Environment</th>
+                        <th class="sortable" data-sort="recommend">Recommend</th>
+                        <th class="sortable" data-sort="responses">Responses</th>
+                        <th class="sortable" data-sort="overall">Overall</th>
+                    </tr>
+                </thead>
+                <tbody id="serverTableBody">
+                    <!-- Data will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Generate dummy data for multiple months
+        function generateDummyData() {
+            const servers = [
+                'Jane Smith', 'Tom Jones', 'Walter Lu', 
+                'Fran Potts', 'Ali May', 'Steve John'
+            ];
+            
+            const shifts = ['breakfast', 'lunch', 'dinner'];
+            const data = [];
+            
+            // Generate data from August 1 to November 8, 2025
+            const startDate = new Date('2025-08-01');
+            const endDate = new Date('2025-11-08');
+            
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                shifts.forEach(shift => {
+                    servers.forEach(server => {
+                        // Random number of responses per server per shift (0-3)
+                        const numResponses = Math.floor(Math.random() * 4);
+                        
+                        for (let i = 0; i < numResponses; i++) {
+                            // Generate slightly different ratings for each server (with some personality)
+                            const baseRatings = {
+                                'Jane Smith': { food: 4.2, drinks: 4.0, service: 4.5, environment: 3.8, recommend: 4.0 },
+                                'Tom Jones': { food: 4.3, drinks: 3.8, service: 4.0, environment: 4.0, recommend: 4.1 },
+                                'Walter Lu': { food: 4.0, drinks: 3.7, service: 3.0, environment: 4.2, recommend: 4.0 },
+                                'Fran Potts': { food: 4.0, drinks: 4.0, service: 4.5, environment: 4.0, recommend: 4.0 },
+                                'Ali May': { food: 4.5, drinks: 3.9, service: 4.0, environment: 4.5, recommend: 4.4 },
+                                'Steve John': { food: 4.2, drinks: 3.8, service: 4.2, environment: 4.0, recommend: 4.2 }
+                            };
+                            
+                            const base = baseRatings[server];
+                            
+                            data.push({
+                                date: new Date(d),
+                                server: server,
+                                shift: shift,
+                                food: Math.max(1, Math.min(5, base.food + (Math.random() - 0.5) * 0.8)),
+                                drinks: Math.max(1, Math.min(5, base.drinks + (Math.random() - 0.5) * 0.8)),
+                                service: Math.max(1, Math.min(5, base.service + (Math.random() - 0.5) * 0.8)),
+                                environment: Math.max(1, Math.min(5, base.environment + (Math.random() - 0.5) * 0.8)),
+                                recommend: Math.max(1, Math.min(5, base.recommend + (Math.random() - 0.5) * 0.8))
+                            });
+                        }
+                    });
+                });
+            }
+            
+            return data;
+        }
+
+        const allData = generateDummyData();
+        let filteredData = [...allData];
+        let charts = {};
+
+        // Chart color scheme
+        const chartColors = {
+            primary: '#60a5fa',
+            secondary: '#1e3a8a',
+            accent: '#93c5fd',
+            success: '#4ade80',
+            warning: '#fbbf24',
+            danger: '#f87171'
+        };
+
+        // Filter data based on current selections
+        function filterData() {
+            const server = document.getElementById('server-select').value;
+            const dateFrom = new Date(document.getElementById('date-from').value);
+            const dateTo = new Date(document.getElementById('date-to').value);
+            const shift = document.getElementById('shift-select').value;
+            const measure = document.getElementById('measure-select').value;
+
+            filteredData = allData.filter(item => {
+                const itemDate = new Date(item.date);
+                const matchServer = !server || item.server.toLowerCase().includes(server);
+                const matchDate = itemDate >= dateFrom && itemDate <= dateTo;
+                const matchShift = !shift || item.shift === shift;
+                
+                return matchServer && matchDate && matchShift;
+            });
+
+            updateDashboard();
+        }
+
+        // Calculate aggregated statistics
+        function calculateStats() {
+            if (filteredData.length === 0) {
+                return {
+                    avgFood: 0, avgDrinks: 0, avgService: 0, 
+                    avgEnvironment: 0, avgRecommend: 0, 
+                    totalResponses: 0, avgOverall: 0
+                };
+            }
+
+            const totals = filteredData.reduce((acc, item) => {
+                acc.food += item.food;
+                acc.drinks += item.drinks;
+                acc.service += item.service;
+                acc.environment += item.environment;
+                acc.recommend += item.recommend;
+                return acc;
+            }, { food: 0, drinks: 0, service: 0, environment: 0, recommend: 0 });
+
+            const count = filteredData.length;
+
+            return {
+                avgFood: (totals.food / count).toFixed(2),
+                avgDrinks: (totals.drinks / count).toFixed(2),
+                avgService: (totals.service / count).toFixed(2),
+                avgEnvironment: (totals.environment / count).toFixed(2),
+                avgRecommend: (totals.recommend / count).toFixed(2),
+                totalResponses: count,
+                avgOverall: ((totals.food + totals.drinks + totals.service + totals.environment + totals.recommend) / (count * 5)).toFixed(2)
+            };
+        }
+
+        // Calculate server-specific data
+        function calculateServerData() {
+            const serverMap = new Map();
+            
+            filteredData.forEach(item => {
+                if (!serverMap.has(item.server)) {
+                    serverMap.set(item.server, {
+                        name: item.server,
+                        food: [],
+                        drinks: [],
+                        service: [],
+                        environment: [],
+                        recommend: [],
+                        responses: 0
+                    });
+                }
+                
+                const server = serverMap.get(item.server);
+                server.food.push(item.food);
+                server.drinks.push(item.drinks);
+                server.service.push(item.service);
+                server.environment.push(item.environment);
+                server.recommend.push(item.recommend);
+                server.responses++;
+            });
+
+            const serverData = Array.from(serverMap.values()).map(server => ({
+                name: server.name,
+                food: (server.food.reduce((a, b) => a + b, 0) / server.food.length),
+                drinks: (server.drinks.reduce((a, b) => a + b, 0) / server.drinks.length),
+                service: (server.service.reduce((a, b) => a + b, 0) / server.service.length),
+                environment: (server.environment.reduce((a, b) => a + b, 0) / server.environment.length),
+                recommend: (server.recommend.reduce((a, b) => a + b, 0) / server.recommend.length),
+                responses: server.responses
+            }));
+
+            // Sort by overall rating
+            serverData.sort((a, b) => {
+                const avgA = (a.food + a.drinks + a.service + a.environment + a.recommend) / 5;
+                const avgB = (b.food + b.drinks + b.service + b.environment + b.recommend) / 5;
+                return avgB - avgA;
+            });
+
+            return serverData;
+        }
+
+        // Update all dashboard elements
+        function updateDashboard() {
+            const stats = calculateStats();
+            const serverData = calculateServerData();
+
+            // Update stats cards
+            document.querySelector('.stats-overview').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Team Average Rating</div>
+                    <div class="stat-value">${stats.avgOverall}</div>
+                    <div class="stat-change positive">
+                        Based on ${stats.totalResponses} responses
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Total Responses</div>
+                    <div class="stat-value">${stats.totalResponses}</div>
+                    <div class="stat-change positive">
+                        For selected period
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Google Reviews Generated</div>
+                    <div class="stat-value">${Math.floor(stats.totalResponses * 0.57)}</div>
+                    <div class="stat-change positive">
+                        57% conversion rate
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Avg Responses per Server</div>
+                    <div class="stat-value">${serverData.length > 0 ? (stats.totalResponses / serverData.length).toFixed(1) : 0}</div>
+                    <div class="stat-change positive">
+                        ${serverData.length} active servers
+                    </div>
+                </div>
+            `;
+
+            // Update charts
+            updateCategoryChart(stats);
+            updatePerformersChart(serverData);
+            updateTrendsChart();
+            updateDistributionChart();
+            updateShiftChart();
+            updateTable(serverData);
+        }
+
+        // Category Chart
+        function updateCategoryChart(stats) {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            
+            if (charts.category) {
+                charts.category.destroy();
+            }
+
+            charts.category = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Food', 'Drinks', 'Service', 'Environment', 'Recommend'],
+                    datasets: [{
+                        label: 'Team Average',
+                        data: [stats.avgFood, stats.avgDrinks, stats.avgService, stats.avgEnvironment, stats.avgRecommend],
+                        backgroundColor: chartColors.primary,
+                        borderColor: chartColors.accent,
+                        borderWidth: 1,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 58, 138, 0.9)',
+                            titleColor: '#93c5fd',
+                            bodyColor: '#ffffff',
+                            borderColor: '#60a5fa',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 5,
+                            ticks: { color: '#93c5fd' },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        },
+                        x: {
+                            ticks: { color: '#93c5fd' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Top Performers Chart
+        function updatePerformersChart(serverData) {
+            const ctx = document.getElementById('performersChart').getContext('2d');
+            
+            if (charts.performers) {
+                charts.performers.destroy();
+            }
+
+            const topPerformers = serverData.slice(0, 5).map(s => ({
+                name: s.name.split(' ')[0],
+                avg: ((s.food + s.drinks + s.service + s.environment + s.recommend) / 5).toFixed(2)
+            }));
+
+            charts.performers = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: topPerformers.map(p => p.name),
+                    datasets: [{
+                        label: 'Overall Rating',
+                        data: topPerformers.map(p => p.avg),
+                        backgroundColor: [
+                            chartColors.success,
+                            chartColors.primary,
+                            chartColors.primary,
+                            chartColors.accent,
+                            chartColors.accent
+                        ],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 58, 138, 0.9)',
+                            titleColor: '#93c5fd',
+                            bodyColor: '#ffffff',
+                            borderColor: '#60a5fa',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 5,
+                            ticks: { color: '#93c5fd' },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        },
+                        y: {
+                            ticks: { color: '#93c5fd' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Trends Chart
+        function updateTrendsChart() {
+            const ctx = document.getElementById('trendsChart').getContext('2d');
+            
+            if (charts.trends) {
+                charts.trends.destroy();
+            }
+
+            // Group data by date
+            const dateMap = new Map();
+            filteredData.forEach(item => {
+                const dateKey = item.date.toISOString().split('T')[0];
+                if (!dateMap.has(dateKey)) {
+                    dateMap.set(dateKey, { food: [], drinks: [], service: [], environment: [], recommend: [], overall: [] });
+                }
+                const day = dateMap.get(dateKey);
+                day.food.push(item.food);
+                day.drinks.push(item.drinks);
+                day.service.push(item.service);
+                day.environment.push(item.environment);
+                day.recommend.push(item.recommend);
+                day.overall.push((item.food + item.drinks + item.service + item.environment + item.recommend) / 5);
+            });
+
+            // Sort dates and prepare data
+            const sortedDates = Array.from(dateMap.keys()).sort();
+            const labels = sortedDates.map(date => {
+                const d = new Date(date);
+                return `${d.getMonth() + 1}/${d.getDate()}`;
+            });
+
+            // Prepare data for each metric
+            const metricsData = {
+                food: sortedDates.map(date => {
+                    const values = dateMap.get(date).food;
+                    return values.length > 0 ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2) : 0;
+                }),
+                drinks: sortedDates.map(date => {
+                    const values = dateMap.get(date).drinks;
+                    return values.length > 0 ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2) : 0;
+                }),
+                service: sortedDates.map(date => {
+                    const values = dateMap.get(date).service;
+                    return values.length > 0 ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2) : 0;
+                }),
+                environment: sortedDates.map(date => {
+                    const values = dateMap.get(date).environment;
+                    return values.length > 0 ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2) : 0;
+                }),
+                recommend: sortedDates.map(date => {
+                    const values = dateMap.get(date).recommend;
+                    return values.length > 0 ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2) : 0;
+                }),
+                overall: sortedDates.map(date => {
+                    const values = dateMap.get(date).overall;
+                    return values.length > 0 ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2) : 0;
+                })
+            };
+
+            // Only show last 30 days max for readability
+            const maxPoints = 30;
+            const startIndex = Math.max(0, labels.length - maxPoints);
+
+            // Check which metrics are selected
+            const datasets = [];
+            
+            if (document.getElementById('trend-food')?.checked) {
+                datasets.push({
+                    label: 'Food',
+                    data: metricsData.food.slice(startIndex),
+                    borderColor: chartColors.primary,
+                    backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                });
+            }
+
+            if (document.getElementById('trend-drinks')?.checked) {
+                datasets.push({
+                    label: 'Drinks',
+                    data: metricsData.drinks.slice(startIndex),
+                    borderColor: chartColors.warning,
+                    backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                });
+            }
+
+            if (document.getElementById('trend-service')?.checked) {
+                datasets.push({
+                    label: 'Service',
+                    data: metricsData.service.slice(startIndex),
+                    borderColor: chartColors.success,
+                    backgroundColor: 'rgba(74, 222, 128, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                });
+            }
+
+            if (document.getElementById('trend-environment')?.checked) {
+                datasets.push({
+                    label: 'Environment',
+                    data: metricsData.environment.slice(startIndex),
+                    borderColor: chartColors.danger,
+                    backgroundColor: 'rgba(248, 113, 113, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                });
+            }
+
+            if (document.getElementById('trend-recommend')?.checked) {
+                datasets.push({
+                    label: 'Recommend',
+                    data: metricsData.recommend.slice(startIndex),
+                    borderColor: '#a78bfa',
+                    backgroundColor: 'rgba(167, 139, 250, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                });
+            }
+
+            if (document.getElementById('trend-overall')?.checked) {
+                datasets.push({
+                    label: 'Overall',
+                    data: metricsData.overall.slice(startIndex),
+                    borderColor: chartColors.accent,
+                    backgroundColor: 'rgba(147, 197, 253, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                });
+            }
+
+            charts.trends = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.slice(startIndex),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: { color: '#93c5fd' }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 58, 138, 0.9)',
+                            titleColor: '#93c5fd',
+                            bodyColor: '#ffffff',
+                            borderColor: '#60a5fa',
+                            borderWidth: 1,
+                            padding: 12
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 5,
+                            ticks: { color: '#93c5fd' },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        },
+                        x: {
+                            ticks: { 
+                                color: '#93c5fd',
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Distribution Chart
+        function updateDistributionChart() {
+            const ctx = document.getElementById('distributionChart').getContext('2d');
+            
+            if (charts.distribution) {
+                charts.distribution.destroy();
+            }
+
+            // Calculate star distribution
+            const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+            
+            filteredData.forEach(item => {
+                const overall = (item.food + item.drinks + item.service + item.environment + item.recommend) / 5;
+                const stars = Math.round(overall);
+                distribution[stars]++;
+            });
+
+            charts.distribution = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['5 Stars', '4 Stars', '3 Stars', '2 Stars', '1 Star'],
+                    datasets: [{
+                        data: [distribution[5], distribution[4], distribution[3], distribution[2], distribution[1]],
+                        backgroundColor: [
+                            chartColors.success,
+                            chartColors.primary,
+                            chartColors.warning,
+                            chartColors.danger,
+                            '#991b1b'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#1a1a4a'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: { color: '#93c5fd', padding: 15 }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 58, 138, 0.9)',
+                            titleColor: '#93c5fd',
+                            bodyColor: '#ffffff',
+                            borderColor: '#60a5fa',
+                            borderWidth: 1,
+                            padding: 12
+                        }
+                    }
+                }
+            });
+        }
+
+        // Shift Chart with Google Reviews
+        function updateShiftChart() {
+            const ctx = document.getElementById('shiftChart').getContext('2d');
+            
+            if (charts.shift) {
+                charts.shift.destroy();
+            }
+
+            const shiftCounts = { breakfast: 0, lunch: 0, dinner: 0 };
+            filteredData.forEach(item => {
+                shiftCounts[item.shift]++;
+            });
+
+            // Calculate Google reviews (57% conversion rate)
+            const googleReviews = {
+                breakfast: Math.floor(shiftCounts.breakfast * 0.57),
+                lunch: Math.floor(shiftCounts.lunch * 0.57),
+                dinner: Math.floor(shiftCounts.dinner * 0.57)
+            };
+
+            charts.shift = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Breakfast', 'Lunch', 'Dinner'],
+                    datasets: [{
+                        label: 'Responses',
+                        data: [shiftCounts.breakfast, shiftCounts.lunch, shiftCounts.dinner],
+                        backgroundColor: [
+                            chartColors.warning,
+                            chartColors.primary,
+                            chartColors.secondary
+                        ],
+                        borderRadius: 8,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Google Reviews',
+                        data: [googleReviews.breakfast, googleReviews.lunch, googleReviews.dinner],
+                        backgroundColor: [
+                            'rgba(74, 222, 128, 0.6)',
+                            'rgba(74, 222, 128, 0.6)',
+                            'rgba(74, 222, 128, 0.6)'
+                        ],
+                        borderRadius: 8,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { 
+                            display: true,
+                            labels: { color: '#93c5fd' }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 58, 138, 0.9)',
+                            titleColor: '#93c5fd',
+                            bodyColor: '#ffffff',
+                            borderColor: '#60a5fa',
+                            borderWidth: 1,
+                            padding: 12
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            beginAtZero: true,
+                            ticks: { color: '#93c5fd' },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            title: {
+                                display: true,
+                                text: 'Responses',
+                                color: '#93c5fd'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            beginAtZero: true,
+                            ticks: { color: '#4ade80' },
+                            grid: { display: false },
+                            title: {
+                                display: true,
+                                text: 'Google Reviews',
+                                color: '#4ade80'
+                            }
+                        },
+                        x: {
+                            ticks: { color: '#93c5fd' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update table
+        function updateTable(serverData) {
+            const tbody = document.getElementById('serverTableBody');
+            tbody.innerHTML = '';
+
+            if (serverData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">No data available for selected filters</td></tr>';
+                return;
+            }
+
+            serverData.forEach(server => {
+                const overall = ((server.food + server.drinks + server.service + server.environment + server.recommend) / 5).toFixed(2);
+                const overallClass = overall >= 4.3 ? 'excellent' : overall >= 4.0 ? 'good' : overall >= 3.5 ? 'average' : 'poor';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-weight: 600;">${server.name}</td>
+                    <td>${server.food.toFixed(1)} <span class="star">★</span></td>
+                    <td>${server.drinks.toFixed(1)} <span class="star">★</span></td>
+                    <td>${server.service.toFixed(1)} <span class="star">★</span></td>
+                    <td>${server.environment.toFixed(1)} <span class="star">★</span></td>
+                    <td>${server.recommend.toFixed(1)} <span class="star">★</span></td>
+                    <td>${server.responses}</td>
+                    <td><span class="rating-badge ${overallClass}">${overall} <span class="star">★</span></span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Initialize dashboard
+        updateDashboard();
+
+        // Add filter functionality
+        document.querySelector('.apply-filters').addEventListener('click', filterData);
+
+        // Table sorting functionality
+        let currentSort = { column: 'overall', direction: 'desc' };
+
+        document.querySelectorAll('.sortable').forEach(header => {
+            header.addEventListener('click', function() {
+                const sortBy = this.getAttribute('data-sort');
+                
+                // Toggle direction if clicking the same column
+                if (currentSort.column === sortBy) {
+                    currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    currentSort.column = sortBy;
+                    currentSort.direction = 'desc';
+                }
+
+                // Update header styles
+                document.querySelectorAll('.sortable').forEach(h => {
+                    h.classList.remove('asc', 'desc');
+                });
+                this.classList.add(currentSort.direction);
+
+                // Sort and update table
+                sortAndUpdateTable();
+            });
+        });
+
+        function sortAndUpdateTable() {
+            const serverData = calculateServerData();
+            
+            serverData.sort((a, b) => {
+                let aVal, bVal;
+
+                if (currentSort.column === 'name') {
+                    aVal = a.name;
+                    bVal = b.name;
+                    return currentSort.direction === 'asc' 
+                        ? aVal.localeCompare(bVal)
+                        : bVal.localeCompare(aVal);
+                } else if (currentSort.column === 'overall') {
+                    aVal = (a.food + a.drinks + a.service + a.environment + a.recommend) / 5;
+                    bVal = (b.food + b.drinks + b.service + b.environment + b.recommend) / 5;
+                } else {
+                    aVal = a[currentSort.column];
+                    bVal = b[currentSort.column];
+                }
+
+                return currentSort.direction === 'asc' ? aVal - bVal : bVal - aVal;
+            });
+
+            updateTable(serverData);
+        }
+
+        // Add event listeners for trend chart metric toggles
+        ['trend-food', 'trend-drinks', 'trend-service', 'trend-environment', 'trend-recommend', 'trend-overall'].forEach(id => {
+            const checkbox = document.getElementById(id);
+            if (checkbox) {
+                checkbox.addEventListener('change', updateTrendsChart);
+            }
+        });
+    </script>
+</body>
+</html>
