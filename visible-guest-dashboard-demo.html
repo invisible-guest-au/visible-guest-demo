@@ -20,19 +20,45 @@
         }
 
         .header {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            padding: 1.5rem 2rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(10px);
+          padding: 1.5rem 2rem;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+          display: grid;
+          grid-template-columns: 1fr auto 1fr; /* left | centered | right */
+          align-items: center;
         }
 
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
+        .header-left {
+          justify-self: start;
+          display: flex;
+          align-items: center;
+        }
+
+        .header-center {
+          justify-self: center;
+        }
+
+        .header-right {
+          justify-self: end;
+        }
+
+        .frank-logo {
+          height: 32px;
+        }
+
+        .beenleigh-logo-wrap {
+          background: #000;
+          border-radius: 6px;
+          padding: 8px 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .beenleigh-logo {
+          height: 32px;
         }
 
         .venue-name {
@@ -289,14 +315,18 @@
 </head>
 <body>
     <header class="header">
-        <div class="logo">
-            <img src="./assets/Frank_Custom.png" alt="Frank" style="height: 32px;">
-            <div style="margin-left: 1rem; background: #000; border-radius: 6px; padding: 8px 16px;">
-                <img src="./assets/beenleigh-logo.png" alt="Club Beenleigh" style="height: 32px;">
-            </div>
+      <div class="header-left">
+        <img src="./assets/Frank_Custom.png" alt="Frank" class="frank-logo">
+      </div>
+
+      <div class="header-center">
+        <div class="beenleigh-logo-wrap">
+          <img src="./assets/beenleigh-logo.png" alt="Club Beenleigh" class="beenleigh-logo">
         </div>
-        <div class="venue-name">Dashboard</div>
-    </header>
+      </div>
+
+      <div class="header-right venue-name">Dashboard</div>
+</header>
 
     <div class="container">
         <!-- Filters Section -->
