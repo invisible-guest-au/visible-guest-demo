@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invisible Guest - Venue Dashboard</title>
+    <title>Club Beenleigh - Venue Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
@@ -262,33 +262,6 @@
             color: #f87171;
         }
 
-        .sortable {
-            cursor: pointer;
-            user-select: none;
-            position: relative;
-            transition: color 0.2s ease;
-        }
-
-        .sortable:hover {
-            color: #60a5fa;
-        }
-
-        .sortable::after {
-            content: ' ↕';
-            opacity: 0.3;
-            font-size: 0.8em;
-        }
-
-        .sortable.asc::after {
-            content: ' ↑';
-            opacity: 1;
-        }
-
-        .sortable.desc::after {
-            content: ' ↓';
-            opacity: 1;
-        }
-
         .star {
             color: #fbbf24;
         }
@@ -317,9 +290,9 @@
 <body>
     <header class="header">
         <div class="logo">
-            <img src="./NEW_IG_Artboard_30.png" alt="Invisible Guest" style="height: 50px;">
-            <div style="margin-left: 1rem;">
-                <div class="venue-name">Club Beenleigh</div>
+            <img src="./assets/Frank_Custom.png" alt="Frank" style="height: 32px;">
+            <div style="margin-left: 1rem; background: #000; border-radius: 6px; padding: 8px 16px;">
+                <img src="./assets/beenleigh-logo.png" alt="Club Beenleigh" style="height: 32px;">
             </div>
         </div>
         <div class="venue-name">Dashboard</div>
@@ -429,35 +402,7 @@
             </div>
 
             <div class="chart-card full-width">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h3 class="chart-title" style="margin: 0;">Rating Trends (Last 30 Days)</h3>
-                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="checkbox" id="trend-food" checked style="cursor: pointer;">
-                            <span style="color: #60a5fa;">Food</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="checkbox" id="trend-drinks" style="cursor: pointer;">
-                            <span style="color: #fbbf24;">Drinks</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="checkbox" id="trend-service" checked style="cursor: pointer;">
-                            <span style="color: #4ade80;">Service</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="checkbox" id="trend-environment" style="cursor: pointer;">
-                            <span style="color: #f87171;">Environment</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="checkbox" id="trend-recommend" style="cursor: pointer;">
-                            <span style="color: #a78bfa;">Recommend</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="checkbox" id="trend-overall" checked style="cursor: pointer;">
-                            <span style="color: #93c5fd;">Overall</span>
-                        </label>
-                    </div>
-                </div>
+                <h3 class="chart-title">Rating Trends (7 Days)</h3>
                 <canvas id="trendsChart"></canvas>
             </div>
 
@@ -478,14 +423,14 @@
             <table>
                 <thead>
                     <tr>
-                        <th class="sortable" data-sort="name">Name</th>
-                        <th class="sortable" data-sort="food">Food</th>
-                        <th class="sortable" data-sort="drinks">Drinks</th>
-                        <th class="sortable" data-sort="service">Service</th>
-                        <th class="sortable" data-sort="environment">Environment</th>
-                        <th class="sortable" data-sort="recommend">Recommend</th>
-                        <th class="sortable" data-sort="responses">Responses</th>
-                        <th class="sortable" data-sort="overall">Overall</th>
+                        <th>Name</th>
+                        <th>Food</th>
+                        <th>Drinks</th>
+                        <th>Service</th>
+                        <th>Environment</th>
+                        <th>Recommend</th>
+                        <th>Responses</th>
+                        <th>Overall</th>
                     </tr>
                 </thead>
                 <tbody id="serverTableBody">
@@ -835,14 +780,11 @@
             filteredData.forEach(item => {
                 const dateKey = item.date.toISOString().split('T')[0];
                 if (!dateMap.has(dateKey)) {
-                    dateMap.set(dateKey, { food: [], drinks: [], service: [], environment: [], recommend: [], overall: [] });
+                    dateMap.set(dateKey, { food: [], service: [], overall: [] });
                 }
                 const day = dateMap.get(dateKey);
                 day.food.push(item.food);
-                day.drinks.push(item.drinks);
                 day.service.push(item.service);
-                day.environment.push(item.environment);
-                day.recommend.push(item.recommend);
                 day.overall.push((item.food + item.drinks + item.service + item.environment + item.recommend) / 5);
             });
 
@@ -853,112 +795,55 @@
                 return `${d.getMonth() + 1}/${d.getDate()}`;
             });
 
-            // Prepare data for each metric
-            const metricsData = {
-                food: sortedDates.map(date => {
-                    const values = dateMap.get(date).food;
-                    return values.length > 0 ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2) : 0;
-                }),
-                drinks: sortedDates.map(date => {
-                    const values = dateMap.get(date).drinks;
-                    return values.length > 0 ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2) : 0;
-                }),
-                service: sortedDates.map(date => {
-                    const values = dateMap.get(date).service;
-                    return values.length > 0 ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2) : 0;
-                }),
-                environment: sortedDates.map(date => {
-                    const values = dateMap.get(date).environment;
-                    return values.length > 0 ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2) : 0;
-                }),
-                recommend: sortedDates.map(date => {
-                    const values = dateMap.get(date).recommend;
-                    return values.length > 0 ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2) : 0;
-                }),
-                overall: sortedDates.map(date => {
-                    const values = dateMap.get(date).overall;
-                    return values.length > 0 ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2) : 0;
-                })
-            };
+            const foodData = sortedDates.map(date => {
+                const values = dateMap.get(date).food;
+                return values.length > 0 ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2) : 0;
+            });
+
+            const serviceData = sortedDates.map(date => {
+                const values = dateMap.get(date).service;
+                return values.length > 0 ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2) : 0;
+            });
+
+            const overallData = sortedDates.map(date => {
+                const values = dateMap.get(date).overall;
+                return values.length > 0 ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2) : 0;
+            });
 
             // Only show last 30 days max for readability
             const maxPoints = 30;
             const startIndex = Math.max(0, labels.length - maxPoints);
 
-            // Check which metrics are selected
-            const datasets = [];
-            
-            if (document.getElementById('trend-food')?.checked) {
-                datasets.push({
-                    label: 'Food',
-                    data: metricsData.food.slice(startIndex),
-                    borderColor: chartColors.primary,
-                    backgroundColor: 'rgba(96, 165, 250, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                });
-            }
-
-            if (document.getElementById('trend-drinks')?.checked) {
-                datasets.push({
-                    label: 'Drinks',
-                    data: metricsData.drinks.slice(startIndex),
-                    borderColor: chartColors.warning,
-                    backgroundColor: 'rgba(251, 191, 36, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                });
-            }
-
-            if (document.getElementById('trend-service')?.checked) {
-                datasets.push({
-                    label: 'Service',
-                    data: metricsData.service.slice(startIndex),
-                    borderColor: chartColors.success,
-                    backgroundColor: 'rgba(74, 222, 128, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                });
-            }
-
-            if (document.getElementById('trend-environment')?.checked) {
-                datasets.push({
-                    label: 'Environment',
-                    data: metricsData.environment.slice(startIndex),
-                    borderColor: chartColors.danger,
-                    backgroundColor: 'rgba(248, 113, 113, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                });
-            }
-
-            if (document.getElementById('trend-recommend')?.checked) {
-                datasets.push({
-                    label: 'Recommend',
-                    data: metricsData.recommend.slice(startIndex),
-                    borderColor: '#a78bfa',
-                    backgroundColor: 'rgba(167, 139, 250, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                });
-            }
-
-            if (document.getElementById('trend-overall')?.checked) {
-                datasets.push({
-                    label: 'Overall',
-                    data: metricsData.overall.slice(startIndex),
-                    borderColor: chartColors.accent,
-                    backgroundColor: 'rgba(147, 197, 253, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                });
-            }
-
             charts.trends = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels.slice(startIndex),
-                    datasets: datasets
+                    datasets: [
+                        {
+                            label: 'Food',
+                            data: foodData.slice(startIndex),
+                            borderColor: chartColors.primary,
+                            backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Service',
+                            data: serviceData.slice(startIndex),
+                            borderColor: chartColors.success,
+                            backgroundColor: 'rgba(74, 222, 128, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Overall',
+                            data: overallData.slice(startIndex),
+                            borderColor: chartColors.accent,
+                            backgroundColor: 'rgba(147, 197, 253, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
@@ -1053,7 +938,7 @@
             });
         }
 
-        // Shift Chart with Google Reviews
+        // Shift Chart
         function updateShiftChart() {
             const ctx = document.getElementById('shiftChart').getContext('2d');
             
@@ -1065,13 +950,6 @@
             filteredData.forEach(item => {
                 shiftCounts[item.shift]++;
             });
-
-            // Calculate Google reviews (57% conversion rate)
-            const googleReviews = {
-                breakfast: Math.floor(shiftCounts.breakfast * 0.57),
-                lunch: Math.floor(shiftCounts.lunch * 0.57),
-                dinner: Math.floor(shiftCounts.dinner * 0.57)
-            };
 
             charts.shift = new Chart(ctx, {
                 type: 'bar',
@@ -1085,62 +963,29 @@
                             chartColors.primary,
                             chartColors.secondary
                         ],
-                        borderRadius: 8,
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'Google Reviews',
-                        data: [googleReviews.breakfast, googleReviews.lunch, googleReviews.dinner],
-                        backgroundColor: [
-                            'rgba(74, 222, 128, 0.6)',
-                            'rgba(74, 222, 128, 0.6)',
-                            'rgba(74, 222, 128, 0.6)'
-                        ],
-                        borderRadius: 8,
-                        yAxisID: 'y1'
+                        borderRadius: 8
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
                     plugins: {
-                        legend: { 
-                            display: true,
-                            labels: { color: '#93c5fd' }
-                        },
+                        legend: { display: false },
                         tooltip: {
                             backgroundColor: 'rgba(30, 58, 138, 0.9)',
                             titleColor: '#93c5fd',
                             bodyColor: '#ffffff',
                             borderColor: '#60a5fa',
                             borderWidth: 1,
-                            padding: 12
+                            padding: 12,
+                            displayColors: false
                         }
                     },
                     scales: {
                         y: {
-                            type: 'linear',
-                            position: 'left',
                             beginAtZero: true,
                             ticks: { color: '#93c5fd' },
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                            title: {
-                                display: true,
-                                text: 'Responses',
-                                color: '#93c5fd'
-                            }
-                        },
-                        y1: {
-                            type: 'linear',
-                            position: 'right',
-                            beginAtZero: true,
-                            ticks: { color: '#4ade80' },
-                            grid: { display: false },
-                            title: {
-                                display: true,
-                                text: 'Google Reviews',
-                                color: '#4ade80'
-                            }
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
                         },
                         x: {
                             ticks: { color: '#93c5fd' },
@@ -1185,66 +1030,6 @@
 
         // Add filter functionality
         document.querySelector('.apply-filters').addEventListener('click', filterData);
-
-        // Table sorting functionality
-        let currentSort = { column: 'overall', direction: 'desc' };
-
-        document.querySelectorAll('.sortable').forEach(header => {
-            header.addEventListener('click', function() {
-                const sortBy = this.getAttribute('data-sort');
-                
-                // Toggle direction if clicking the same column
-                if (currentSort.column === sortBy) {
-                    currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-                } else {
-                    currentSort.column = sortBy;
-                    currentSort.direction = 'desc';
-                }
-
-                // Update header styles
-                document.querySelectorAll('.sortable').forEach(h => {
-                    h.classList.remove('asc', 'desc');
-                });
-                this.classList.add(currentSort.direction);
-
-                // Sort and update table
-                sortAndUpdateTable();
-            });
-        });
-
-        function sortAndUpdateTable() {
-            const serverData = calculateServerData();
-            
-            serverData.sort((a, b) => {
-                let aVal, bVal;
-
-                if (currentSort.column === 'name') {
-                    aVal = a.name;
-                    bVal = b.name;
-                    return currentSort.direction === 'asc' 
-                        ? aVal.localeCompare(bVal)
-                        : bVal.localeCompare(aVal);
-                } else if (currentSort.column === 'overall') {
-                    aVal = (a.food + a.drinks + a.service + a.environment + a.recommend) / 5;
-                    bVal = (b.food + b.drinks + b.service + b.environment + b.recommend) / 5;
-                } else {
-                    aVal = a[currentSort.column];
-                    bVal = b[currentSort.column];
-                }
-
-                return currentSort.direction === 'asc' ? aVal - bVal : bVal - aVal;
-            });
-
-            updateTable(serverData);
-        }
-
-        // Add event listeners for trend chart metric toggles
-        ['trend-food', 'trend-drinks', 'trend-service', 'trend-environment', 'trend-recommend', 'trend-overall'].forEach(id => {
-            const checkbox = document.getElementById(id);
-            if (checkbox) {
-                checkbox.addEventListener('change', updateTrendsChart);
-            }
-        });
     </script>
 </body>
 </html>
